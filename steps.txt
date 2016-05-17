@@ -1,0 +1,10 @@
+insure the status of dockercontainer
+
+The status filter matches containers by status. You can filter using created, restarting, running, paused, exited and dead. For example, to filter for running containers:
+refer to : https://docs.docker.com/engine/reference/commandline/ps/
+
+start to code the master add the compose parse (by api accept yaml file)
+(test the api and send the app message into etcd)
+input app name and yaml file 
+
+and expose the corresponding api(get app get images get containers)

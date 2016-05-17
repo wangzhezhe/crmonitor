@@ -1,0 +1,30 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "9fXJ8IMnQDgqSwVsL9ha6V47G9I=",
+			"path": "github.com/coreos/etcd/client",
+			"revision": "9ca3c8e5813e83b7f32b64c4037f569143f59445",
+			"revisionTime": "2016-01-18T06:16:33Z"
+		},
+		{
+			"checksumSHA1": "AKNPmNOUJUMFaBBxq05QKbkpWwU=",
+			"path": "github.com/fsouza/go-dockerclient",
+			"revision": "b0f4fa94c14794e30cf3b9176e5dc4725d9552ed",
+			"revisionTime": "2015-05-20T21:44:38Z"
+		},
+		{
+			"checksumSHA1": "XxSDNaJf0LpjvMapDmmhNIlf+MQ=",
+			"path": "github.com/gin-gonic/gin",
+			"revision": "5caaac4c5c712a9e7a7de29e6c24ef46c753017f",
+			"revisionTime": "2016-04-14T23:39:28Z"
+		},
+		{
+			"checksumSHA1": "nJE3D2CS5WnukPIlM9wzErF7tak=",
+			"path": "golang.org/x/net/context",
+			"revision": ""
+		}
+	],
+	"rootPath": "github.com/crmonitor"
+}
