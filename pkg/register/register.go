@@ -10,6 +10,7 @@ import (
 
 	"github.com/coreos/etcd/client"
 	etcdclientpack "github.com/coreos/etcd/client"
+	"github.com/crmonitor/pkg/crtype"
 	"github.com/fsouza/go-dockerclient"
 	"golang.org/x/net/context"
 )
@@ -30,13 +31,14 @@ type Register interface {
 var Imagerootpath = "images"
 var Subimagedetailpath = "node"
 var Subcontainerdetailpath = "tocontainers"
+var Defaultrootkey string
 
-//get the image info on local machine and register into the etcd
-//path: rootkey/image/<imagename>.../node/<imagedetail>
+// get the image info on local machine and register into the etcd
+// path: rootkey/image/<imagename>.../node/<imagedetail>
 //                                  /tocontainers/<containername>/containerdetail
 // the imageid is unique in different machine??
-//do not set the ttl
-//using watch mechanism to update the image list on etcd when pulling and deleting new images
+// do not set the ttl
+// using watch mechanism to update the image list on etcd when pulling and deleting new images
 func Imageregisterinit(rootkey string, dockerclient *docker.Client, etcdclient etcdclientpack.Client) error {
 	imageinsertpath := rootkey + "/" + Imagerootpath
 	imagelist, err := dockerclient.ListImages(docker.ListImagesOptions{All: false})
@@ -122,6 +124,61 @@ func Imageregisterevent(rootkey string, eventinfo docker.APIEvents, etcdclient e
 		//if there still exist container , do not delete
 	} else {
 
+	}
+
+	return nil
+}
+
+/*
+type Container struct {
+	ID         string            `json:"Id" yaml:"Id"`
+	Image      string            `json:"Image,omitempty" yaml:"Image,omitempty"`
+	Command    string            `json:"Command,omitempty" yaml:"Command,omitempty"`
+	Created    int64             `json:"Created,omitempty" yaml:"Created,omitempty"`
+	Status     string            `json:"Status,omitempty" yaml:"Status,omitempty"`
+	Ports      []APIPort         `json:"Ports,omitempty" yaml:"Ports,omitempty"`
+	SizeRw     int64             `json:"SizeRw,omitempty" yaml:"SizeRw,omitempty"`
+	SizeRootFs int64             `json:"SizeRootFs,omitempty" yaml:"SizeRootFs,omitempty"`
+	Names      []string          `json:"Names,omitempty" yaml:"Names,omitempty"`
+	Labels     map[string]string `json:"Labels,omitempty" yaml:"Labels, omitempty"`
+	Hostip     string
+}
+*/
+// it is ok to refresh the image info
+func Containerinfoupdate(eventstatus string, containerid string, repotag string, hostip string, dockerclient *docker.Client, etcdclient etcdclientpack.Client) error {
+	insertpath := Defaultrootkey + "/" + Imagerootpath + "/" + repotag + "/" + Subcontainerdetailpath + "/" + containerid
+	log.Println("the insert path:", insertpath)
+	cdetail, err := dockerclient.InspectContainer(containerid)
+	if err != nil {
+		return err
+	}
+	statustr := cdetail.State.String()
+	cmdstr := ""
+	for _, cmd := range cdetail.Config.Cmd {
+		cmdstr = cmdstr + " " + cmd
+
+	}
+	//todo get port
+	apicontainer := &crtype.Container{
+		ID:      cdetail.ID,
+		Image:   cdetail.Image,
+		Command: cmdstr,
+		Created: cdetail.Created.Unix(),
+		Status:  statustr,
+		Names:   []string{cdetail.Config.Domainname},
+		Labels:  cdetail.Config.Labels,
+		Hostip:  hostip,
+	}
+
+	kapi := etcdclientpack.NewKeysAPI(etcdclient)
+	jsonvalue, err := json.Marshal(apicontainer)
+	if err != nil {
+		return errors.New("error , failed to do json marshal in Containerinfoupdate : " + err.Error())
+	}
+	_, err = kapi.Update(context.Background(), insertpath, string(jsonvalue))
+
+	if err != nil {
+		return errors.New("error fail to do the update option for container  : " + containerid + err.Error())
 	}
 
 	return nil

@@ -31,6 +31,7 @@ func TestGetDockerClient(t *testing.T) {
 	//{Status:start ID:538ef372f9d2a2402d48fe61c1cffd3c5519db78b3b198203d5068fcd4deeb70 From:busybox:latest Time:1463214794}
 	//{Status:die ID:538ef372f9d2a2402d48fe61c1cffd3c5519db78b3b198203d5068fcd4deeb70 From:busybox:latest Time:1463214860}
 	//{Status:destroy ID:538ef372f9d2a2402d48fe61c1cffd3c5519db78b3b198203d5068fcd4deeb70 From:busybox:latest Time:1463214860}
+	//get event , update the container status in path
 	//use the full sha256 id to be the key of image
 	eventchannel := make(chan *docker.APIEvents, 1)
 	err = dockerclient.AddEventListener(eventchannel)

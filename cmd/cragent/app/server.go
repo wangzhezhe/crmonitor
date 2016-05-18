@@ -14,6 +14,7 @@ import (
 	"github.com/coreos/etcd/client"
 	"github.com/crmonitor/pkg/api"
 	"github.com/crmonitor/pkg/crtype"
+	"github.com/crmonitor/pkg/event"
 	"github.com/crmonitor/pkg/register"
 	etcdclienttool "github.com/crmonitor/pkg/util/clienttool"
 )
@@ -75,12 +76,13 @@ func Run(c *CRAgent) error {
 	if err != nil {
 		log.Println("error , failed yo get dockerclient", err)
 	}
-	err = register.Imageregisterinit(Defaultrootkey, dockerclient, etcdclient)
+	register.Defaultrootkey = Defaultrootkey
+	err = register.Imageregisterinit(register.Defaultrootkey, dockerclient, etcdclient)
 	if err != nil {
 		log.Println("error , failed to do the image init", err)
 	}
 	//collect and register the container info
-	err = register.Containerregisterinit(Defaultrootkey, DefaultHostip, dockerclient, etcdclient)
+	err = register.Containerregisterinit(register.Defaultrootkey, DefaultHostip, dockerclient, etcdclient)
 	if err != nil {
 		log.Println("error , failed to do the container init", err)
 	}
@@ -102,6 +104,9 @@ func (c *CRAgent) AddFlags() error {
 		return errors.New("error , the hostip could not be empty")
 	}
 	log.Printf("use the host ip %s to do the register\n", DefaultHostip)
+	event.DefaultHostip = DefaultHostip
+	event.Defaultdockerendpoint = DefaultDockerdaemon
+	event.Defaultetcdurl = c.ETCD_URL
 	return nil
 }
 
