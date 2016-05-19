@@ -91,7 +91,9 @@ func Containerregisterinit(rootkey string, hostip string, dockerclient *docker.C
 	kapi := etcdclientpack.NewKeysAPI(etcdclient)
 	for _, container := range containerlist {
 		repotag := container.Image
-
+		//TODO only support the compose env
+		//change this in future
+		//projectname := container.Labels["com.docker.compose.project"]
 		//neglect the container created by the image that contains <none>
 
 		if strings.Contains(repotag, "none") {
@@ -160,34 +162,36 @@ type Container struct {
 // it is ok to refresh the image info
 func Containerinfoupdate(eventstatus string, containerid string, repotag string, hostip string, dockerclient *docker.Client, etcdclient etcdclientpack.Client) error {
 
+	kapi := etcdclientpack.NewKeysAPI(etcdclient)
+	//get the new status and update
+	cdetail, err := dockerclient.InspectContainer(containerid)
+	log.Println("the details", cdetail)
+	if err != nil {
+		return err
+	}
+	statustr := cdetail.State.String()
+	cmdstr := ""
+	for _, cmd := range cdetail.Config.Cmd {
+		cmdstr = cmdstr + " " + cmd
+
+	}
+	//todo get port
+	apicontainer := &crtype.Container{
+		ID:      cdetail.ID,
+		Image:   cdetail.Image,
+		Command: cmdstr,
+		Created: cdetail.Created.Unix(),
+		Status:  statustr,
+		Names:   []string{cdetail.Config.Domainname},
+		Labels:  cdetail.Config.Labels,
+		Hostip:  hostip,
+	}
+	projectname := cdetail.Config.Labels["com.docker.compose.project"]
+	log.Println("the project name:", projectname)
 	insertpath := Defaultrootkey + "/" + Imagerootpath + "/" + repotag + "/" + Subcontainerdetailpath + "/" + containerid
 	log.Println("the insert path:", insertpath)
-	kapi := etcdclientpack.NewKeysAPI(etcdclient)
 	//value.Status == "start" || value.Status == "die" || value.Status == "destroy" || value.Status == "create"
 	if eventstatus == "start" || eventstatus == "die" || eventstatus == "create" {
-		//get the new status and update
-		cdetail, err := dockerclient.InspectContainer(containerid)
-		log.Println("the details", cdetail)
-		if err != nil {
-			return err
-		}
-		statustr := cdetail.State.String()
-		cmdstr := ""
-		for _, cmd := range cdetail.Config.Cmd {
-			cmdstr = cmdstr + " " + cmd
-
-		}
-		//todo get port
-		apicontainer := &crtype.Container{
-			ID:      cdetail.ID,
-			Image:   cdetail.Image,
-			Command: cmdstr,
-			Created: cdetail.Created.Unix(),
-			Status:  statustr,
-			Names:   []string{cdetail.Config.Domainname},
-			Labels:  cdetail.Config.Labels,
-			Hostip:  hostip,
-		}
 
 		jsonvalue, err := json.Marshal(apicontainer)
 		if err != nil {

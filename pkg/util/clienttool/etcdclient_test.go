@@ -11,6 +11,7 @@ import (
 )
 
 func TestGetEtcdclient(t *testing.T) {
+	t.Skip()
 	etcd_url := "http://127.0.0.1:4001"
 	etcdclient, err := GetEtcdclient(etcd_url)
 	if err != nil {
@@ -44,5 +45,22 @@ func TestGetEtcdclient(t *testing.T) {
 		t.Error(errors.New("return value failure"))
 	}
 	resp, err = kapi.Set(context.Background(), "/abc'/'def", "world ", nil)
+
+}
+func TestWatcher(t *testing.T) {
+	etcd_url := "http://127.0.0.1:4001"
+	etcdclient, err := GetEtcdclient(etcd_url)
+	if err != nil {
+		t.Error("failed to get the client")
+	}
+	kapi := client.NewKeysAPI(etcdclient)
+	watchkey := "/crmonitor/images"
+	watcher := kapi.Watcher(watchkey, &client.WatcherOptions{Recursive: true})
+
+	respond, err := watcher.Next(context.Background())
+	if err != nil {
+		fmt.Println("the err: ", err)
+	}
+	fmt.Printf("the watch info %+v \n", respond)
 
 }

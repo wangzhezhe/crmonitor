@@ -44,12 +44,15 @@ func GetCRMastermanager(etcd_url string) (*CRMastermanager, error) {
 	}, nil
 }
 
-func getContainerlistfromimage(imagename string, etcdclient client.Client) ([]crtype.Container, error) {
+func getContainerlistfromimage(projectname string, imagename string, etcdclient client.Client) ([]crtype.Container, error) {
 	kapi := client.NewKeysAPI(etcdclient)
 	key := Defaultrootkey + "/" + "images" + "/" + imagename + "/" + "tocontainers"
-	rawdata, err := kapi.Get(context.Background(), key, nil)
+	log.Println("get key", key)
+	rawdata, err := kapi.Get(context.Background(), key, &client.GetOptions{Recursive: true})
+	log.Printf("the raw data %+v: \n", rawdata)
 	if err != nil {
 		if strings.Contains(err.Error(), "Key not found") {
+			log.Println("the key", key)
 			log.Printf("error , do not have any containers record for %s \n ", imagename)
 			return nil, nil
 		} else {
@@ -58,13 +61,20 @@ func getContainerlistfromimage(imagename string, etcdclient client.Client) ([]cr
 	}
 
 	containerlist := []crtype.Container{}
+
 	for _, container := range rawdata.Node.Nodes {
 		p := crtype.Container{}
 		jsoninfo := container.Value
 		//log.Println("the json info", jsoninfo)
 		json.Unmarshal([]byte(jsoninfo), &p)
+
 		//serche the container by image
-		containerlist = append(containerlist, p)
+		//select the rawdata that in accord with the projectname
+		//Labels  com.docker.compose.project:projecta
+		if p.Labels["com.docker.compose.project"] == projectname {
+			containerlist = append(containerlist, p)
+		}
+
 	}
 
 	return containerlist, nil
@@ -89,7 +99,8 @@ func (c *CRMastermanager) Getproject() (interface{}, error) {
 		json.Unmarshal([]byte(jsoninfo), &p)
 		//serche the container by image
 		for index, layer := range p.Layers {
-			containerlist, err := getContainerlistfromimage(layer.Imagename, etcdclient)
+
+			containerlist, err := getContainerlistfromimage(p.Projectname, layer.Imagename, etcdclient)
 			if err != nil {
 				log.Printf("error , failed to get container list for image : %s\n", layer.Imagename)
 			}

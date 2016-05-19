@@ -1,11 +1,8 @@
 version: '2'
 services:
   web:
-    build: .
-    depends_on:
-      - db
-      - redis
+    image: nginx:latest
   redis:
-    image: redis
+    image: redis:latest
   db:
     image: postgres:latest

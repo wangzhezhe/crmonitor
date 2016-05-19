@@ -57,7 +57,7 @@ func (e *Eventmanager) Parsevent() {
 
 		} else {
 			log.Println("sleep 1s")
-			time.Sleep(time.Second * 1)
+			time.Sleep(time.Millisecond * 100)
 		}
 
 	}

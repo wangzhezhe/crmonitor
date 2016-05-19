@@ -418,6 +418,12 @@ func (k *httpKeysAPI) Watcher(key string, opts *WatcherOptions) Watcher {
 			act.WaitIndex = opts.AfterIndex + 1
 		}
 	}
+	//value, err := k.Get(context.Background(), key, nil)
+	//if err != nil {
+	//	fmt.Printf("pre value %+v :\n", value)
+	//} else {
+	//	fmt.Println("return err:", err)
+	//}
 
 	return &httpWatcher{
 		client:   k.client,
@@ -433,11 +439,13 @@ type httpWatcher struct {
 func (hw *httpWatcher) Next(ctx context.Context) (*Response, error) {
 	for {
 		httpresp, body, err := hw.client.Do(ctx, &hw.nextWait)
+
 		if err != nil {
 			return nil, err
 		}
 
 		resp, err := unmarshalHTTPResponse(httpresp.StatusCode, httpresp.Header, body)
+		fmt.Printf("httpwatcher response body: %+v \n", resp)
 		if err != nil {
 			if err == ErrEmptyBody {
 				continue

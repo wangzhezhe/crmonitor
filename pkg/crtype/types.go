@@ -46,3 +46,10 @@ type Nodeinfo struct {
 	Agentport    string
 	Dockerdaemon string
 }
+
+type Event struct {
+	Action      string
+	Projectname string
+	Imagename   string
+	Containerid string
+}
