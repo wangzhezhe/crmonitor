@@ -50,6 +50,7 @@ func Imageregisterinit(rootkey string, dockerclient *docker.Client, etcdclient e
 	for _, image := range imagelist {
 		for _, repotag := range image.RepoTags {
 			if strings.Contains(repotag, "none") {
+				log.Printf("neglect the image: %s %s\n", repotag, image.ID)
 				continue
 			}
 			//attention!
@@ -90,6 +91,18 @@ func Containerregisterinit(rootkey string, hostip string, dockerclient *docker.C
 	kapi := etcdclientpack.NewKeysAPI(etcdclient)
 	for _, container := range containerlist {
 		repotag := container.Image
+
+		//neglect the container created by the image that contains <none>
+
+		if strings.Contains(repotag, "none") {
+			continue
+		}
+
+		//TODO if container is created by image id direactly , change the id into the name
+		//neglect the container created by image id temporality
+		if strings.Contains(repotag, "sha256") {
+			continue
+		}
 
 		inseartpath_container := imageinsertpath + "/" + repotag + "/" + Subcontainerdetailpath + "/" + container.ID
 		// the original struct in docker client have been modified
@@ -146,39 +159,69 @@ type Container struct {
 */
 // it is ok to refresh the image info
 func Containerinfoupdate(eventstatus string, containerid string, repotag string, hostip string, dockerclient *docker.Client, etcdclient etcdclientpack.Client) error {
+
 	insertpath := Defaultrootkey + "/" + Imagerootpath + "/" + repotag + "/" + Subcontainerdetailpath + "/" + containerid
 	log.Println("the insert path:", insertpath)
-	cdetail, err := dockerclient.InspectContainer(containerid)
-	if err != nil {
-		return err
-	}
-	statustr := cdetail.State.String()
-	cmdstr := ""
-	for _, cmd := range cdetail.Config.Cmd {
-		cmdstr = cmdstr + " " + cmd
-
-	}
-	//todo get port
-	apicontainer := &crtype.Container{
-		ID:      cdetail.ID,
-		Image:   cdetail.Image,
-		Command: cmdstr,
-		Created: cdetail.Created.Unix(),
-		Status:  statustr,
-		Names:   []string{cdetail.Config.Domainname},
-		Labels:  cdetail.Config.Labels,
-		Hostip:  hostip,
-	}
-
 	kapi := etcdclientpack.NewKeysAPI(etcdclient)
-	jsonvalue, err := json.Marshal(apicontainer)
-	if err != nil {
-		return errors.New("error , failed to do json marshal in Containerinfoupdate : " + err.Error())
-	}
-	_, err = kapi.Update(context.Background(), insertpath, string(jsonvalue))
+	//value.Status == "start" || value.Status == "die" || value.Status == "destroy" || value.Status == "create"
+	if eventstatus == "start" || eventstatus == "die" || eventstatus == "create" {
+		//get the new status and update
+		cdetail, err := dockerclient.InspectContainer(containerid)
+		log.Println("the details", cdetail)
+		if err != nil {
+			return err
+		}
+		statustr := cdetail.State.String()
+		cmdstr := ""
+		for _, cmd := range cdetail.Config.Cmd {
+			cmdstr = cmdstr + " " + cmd
 
-	if err != nil {
-		return errors.New("error fail to do the update option for container  : " + containerid + err.Error())
+		}
+		//todo get port
+		apicontainer := &crtype.Container{
+			ID:      cdetail.ID,
+			Image:   cdetail.Image,
+			Command: cmdstr,
+			Created: cdetail.Created.Unix(),
+			Status:  statustr,
+			Names:   []string{cdetail.Config.Domainname},
+			Labels:  cdetail.Config.Labels,
+			Hostip:  hostip,
+		}
+
+		jsonvalue, err := json.Marshal(apicontainer)
+		if err != nil {
+			return errors.New("error, failed to do json marshal in Containerinfoupdate: " + err.Error())
+		}
+
+		_, err = kapi.Get(context.Background(), insertpath, nil)
+		if err != nil {
+			if strings.Contains(err.Error(), "100") {
+				_, err = kapi.Set(context.Background(), insertpath, string(jsonvalue), nil)
+				log.Println("prepare to set the value")
+			} else {
+				return errors.New("error, fail to do the update option for container: " + containerid + err.Error())
+			}
+
+		} else {
+			_, err = kapi.Update(context.Background(), insertpath, string(jsonvalue))
+			log.Println("prepare to update the value")
+			if err != nil {
+				log.Println("failed to update the value error: ", err)
+				return err
+			}
+		}
+
+	} else if eventstatus == "destroy" {
+		//delete the specific value in etcd
+		log.Println("do the destroy operation")
+		_, err := kapi.Delete(context.Background(), insertpath, nil)
+		if err != nil {
+			log.Printf("failed to delete the destroyed container: %d\n ", err.Error())
+		}
+		log.Printf("delete the contaienr %d in etcd\n", containerid)
+	} else {
+		log.Println("do not support this status")
 	}
 
 	return nil

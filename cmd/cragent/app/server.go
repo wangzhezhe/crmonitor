@@ -14,15 +14,18 @@ import (
 	"github.com/coreos/etcd/client"
 	"github.com/crmonitor/pkg/api"
 	"github.com/crmonitor/pkg/crtype"
-	"github.com/crmonitor/pkg/event"
 	"github.com/crmonitor/pkg/register"
 	etcdclienttool "github.com/crmonitor/pkg/util/clienttool"
+	"github.com/crmonitor/pkg/util/event"
 )
 
 var (
-	DefaultTTL          = time.Duration(time.Second * 60)
-	DefaultHostip       string
-	DefaultServerport   = 9999
+	DefaultTTL        = time.Duration(time.Second * 60)
+	DefaultHostip     string
+	DefaultServerport = 9999
+	//attention !
+	//the agent should be started with the sudo privilege
+	//the dockerclient could not access the unix:///var/run/docker.sock otherwise
 	DefaultDockerdaemon = "unix:///var/run/docker.sock"
 	Defaultrootkey      = "crmonitor"
 	// etcd support the nest dir
@@ -86,6 +89,11 @@ func Run(c *CRAgent) error {
 	if err != nil {
 		log.Println("error , failed to do the container init", err)
 	}
+
+	//create the event manager and start to listen the docker client
+	eventmanager := event.Eventmanager{}
+	//the go routine is ended with the main process
+	go func() { eventmanager.Parsevent() }()
 
 	//start the api server
 	apiengine := api.Getengine()

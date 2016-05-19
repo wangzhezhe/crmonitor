@@ -30,7 +30,7 @@ func (e *Eventmanager) Parsevent() {
 	if err != nil {
 		log.Println("failed to get etcdclient ", err)
 	}
-	eventchannel := make(chan *docker.APIEvents, 1)
+	eventchannel := make(chan *docker.APIEvents, 5)
 	err = dockerclient.AddEventListener(eventchannel)
 	if err != nil {
 		log.Println("failed to add event listener : ", err)
@@ -38,20 +38,24 @@ func (e *Eventmanager) Parsevent() {
 	log.Println("start the event listener")
 	//A:
 	for {
-		select {
-		case value, _ := <-eventchannel:
-			//if !ok {
-			//	log.Println("break")
-			//break A
-			//}
+		//if get value from channel , ok is true
+		value, ok := <-eventchannel
+		log.Println("the value ", value)
+		if ok == true {
+
 			log.Printf("get docker event %+v:", value)
-			if value.Status == "start" || value.Status == "die" || value.Status == "destroy" {
+			if value.Status == "start" || value.Status == "die" || value.Status == "destroy" || value.Status == "create" {
 				//reister the new container status into etcd
 				//rootkey string, status string, containerid string, repotag string
 				//eventstatus string, containerid string, repotag string, hostip string, dockerclient *docker.Client
+				log.Println("refreash the container")
+				//quit with the main process
 				register.Containerinfoupdate(value.Status, value.ID, value.From, DefaultHostip, dockerclient, etcdclient)
+			} else {
+				log.Println("other event info type")
 			}
-		default:
+
+		} else {
 			log.Println("sleep 1s")
 			time.Sleep(time.Second * 1)
 		}
