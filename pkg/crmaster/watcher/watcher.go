@@ -1,14 +1,49 @@
 package watcher
 
 import (
+	"encoding/json"
 	"log"
+	"strings"
+
+	"net/http"
+
+	"crypto/tls"
+	"io/ioutil"
 
 	"github.com/coreos/etcd/client"
+	"github.com/crmonitor/pkg/crtype"
 	etcdclienttool "github.com/crmonitor/pkg/util/clienttool"
 	"golang.org/x/net/context"
 )
 
 var Defaultrootkey string
+
+//&{Action:update Node:{Key: /crmonitor/images/postgres:latest/projectd/a2ae4c9535514c40d990ab8fe3785d5f054a8752f5b0a05aed09045bcdc8557c, CreatedIndex: 48820, ModifiedIndex: 48840, TTL: 0} PrevNode:{Key: /crmonitor/images/postgres:latest/projectd/a2ae4c9535514c40d990ab8fe3785d5f054a8752f5b0a05aed09045bcdc8557c, CreatedIndex: 48820, ModifiedIndex: 48820, TTL: 0} Index:48839}
+func Parsekey(Action string, Event string) *crtype.Event {
+	/*
+		type Event struct {
+			ProjectName string `json:"project_name"`
+			ImageName   string `json:"image_name"`
+			ContainerID string `json:"container_id"`
+			Event       string `json:"event"`
+		}
+	*/
+
+	eventdetail := &crtype.Event{}
+	splitlist := strings.Split(Event, "/")
+	for index, item := range splitlist {
+		if item == "images" {
+			eventdetail.Event = Action
+			eventdetail.ImageName = splitlist[index+1]
+			eventdetail.ProjectName = splitlist[index+2]
+			eventdetail.ContainerID = splitlist[index+3]
+		}
+	}
+	log.Println("the split list: ", splitlist)
+	log.Printf("detail %+v ", eventdetail)
+	return eventdetail
+
+}
 
 type Etcdwatcher struct {
 }
@@ -21,7 +56,7 @@ type Etcdwatcher struct {
 2016/05/20 00:56:34 prepare to listen
 2016/05/20 00:56:47 the watch info &{Action:set Node:{Key: /crmonitor/images/erere, CreatedIndex: 47756, ModifiedIndex: 47756, TTL: 0} PrevNode:<nil> Index:47755}
 */
-func (e *Etcdwatcher) startEtcdwatcher(ETCD_URL string) {
+func (e *Etcdwatcher) StartEtcdwatcher(ETCD_URL string) {
 
 	etcdclient, err := etcdclienttool.GetEtcdclient(ETCD_URL)
 	if err != nil {
@@ -40,7 +75,34 @@ func (e *Etcdwatcher) startEtcdwatcher(ETCD_URL string) {
 		}
 		log.Printf("the watch info %+v \n", respond)
 
+		//parse the watch info
+		//&{Action:update Node:{Key: /crmonitor/images/postgres:latest/projectd/a2ae4c9535514c40d990ab8fe3785d5f054a8752f5b0a05aed09045bcdc8557c, CreatedIndex: 48820, ModifiedIndex: 48840, TTL: 0} PrevNode:{Key: /crmonitor/images/postgres:latest/projectd/a2ae4c9535514c40d990ab8fe3785d5f054a8752f5b0a05aed09045bcdc8557c, CreatedIndex: 48820, ModifiedIndex: 48820, TTL: 0} Index:48839}
+		watchkey := respond.Node.Key
+		//log.Println("the ")
+		eventinstance := Parsekey(respond.Action, watchkey)
+		log.Println(eventinstance)
 		//write the data to the channel
+		//use post to replace that
+		//104.236.190.90:8000/send
+		url := "http://104.236.190.90:8000/send"
+
+		jsonstr, _ := json.Marshal(eventinstance)
+		reqest, err := http.NewRequest("POST", url, strings.NewReader(string(jsonstr)))
+		if err != nil {
+			panic(err)
+		}
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{},
+		}
+		client := &http.Client{Transport: tr}
+		response, err := client.Do(reqest)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		returnbody, _ := ioutil.ReadAll(response.Body)
+
+		log.Println(string(returnbody))
 
 	}
 

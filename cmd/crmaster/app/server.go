@@ -10,6 +10,7 @@ import (
 	"github.com/coreos/etcd/client"
 	"github.com/crmonitor/pkg/api"
 	"github.com/crmonitor/pkg/crmaster/manager"
+	"github.com/crmonitor/pkg/crmaster/watcher"
 	etcdclienttool "github.com/crmonitor/pkg/util/clienttool"
 )
 
@@ -54,10 +55,18 @@ func Run(c *CRMaster) error {
 
 	//register the image info into the etcd
 
+	go func() {
+		watcher.Defaultrootkey = "crmonitor"
+		testwatcher := &watcher.Etcdwatcher{}
+		testwatcher.StartEtcdwatcher(c.ETCD_URL)
+	}()
+
 	//start the api server
+
 	apiengine := api.Getengine()
 	apiengine = api.Loadcrmasterapi(apiengine)
 	apiengine.Run(":" + strconv.Itoa(DefaultServerport))
+
 	return nil
 }
 

@@ -27,6 +27,7 @@ func (e *Eventmanager) Parsevent() {
 		log.Println("failed to get dockerclient ", err)
 	}
 	etcdclient, err := clienttool.GetEtcdclient(Defaultetcdurl)
+	_ = etcdclient
 	if err != nil {
 		log.Println("failed to get etcdclient ", err)
 	}
@@ -40,11 +41,10 @@ func (e *Eventmanager) Parsevent() {
 	for {
 		//if get value from channel , ok is true
 		value, ok := <-eventchannel
-		log.Println("the value ", value)
 		if ok == true {
-
-			log.Printf("get docker event %+v:", value)
-			if value.Status == "start" || value.Status == "die" || value.Status == "destroy" || value.Status == "create" {
+			log.Println("*****************")
+			log.Printf("get docker event %+v, the status %s", value, value.Status)
+			if value.Status == "start" || value.Status == "die" || value.Status == "destroy" || value.Status == "create" || value.Status == "kill" {
 				//reister the new container status into etcd
 				//rootkey string, status string, containerid string, repotag string
 				//eventstatus string, containerid string, repotag string, hostip string, dockerclient *docker.Client
@@ -56,8 +56,9 @@ func (e *Eventmanager) Parsevent() {
 			}
 
 		} else {
-			log.Println("sleep 1s")
-			time.Sleep(time.Millisecond * 100)
+			//log.Println("sleep 1s")
+			//time.Sleep(time.Millisecond * 100)
+			time.Sleep(time.Second * 1)
 		}
 
 	}

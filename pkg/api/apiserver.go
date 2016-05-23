@@ -7,17 +7,31 @@ import (
 	"os"
 
 	"io/ioutil"
+	"time"
 
 	"github.com/crmonitor/pkg/crmaster/manager"
 	"github.com/crmonitor/pkg/util/parse"
 	"github.com/gin-gonic/gin"
+	"github.com/itsjamie/gin-cors"
 )
 
 var CRMasterregisterpath = "composedir"
 
 func Getengine() *gin.Engine {
 	r := gin.Default()
+	// Apply the middleware to the router (works with groups too)
+	r.Use(cors.Middleware(cors.Config{
+		Origins:         "*",
+		Methods:         "GET, PUT, POST, DELETE",
+		RequestHeaders:  "Origin, Authorization, Content-Type",
+		ExposedHeaders:  "",
+		MaxAge:          50 * time.Second,
+		Credentials:     true,
+		ValidateHeaders: false,
+	}))
+
 	return r
+
 }
 
 func Loadcragentapi(e *gin.Engine) *gin.Engine {
@@ -36,6 +50,17 @@ func getCRMastermanager() (*manager.CRMastermanager, error) {
 	}
 	log.Printf("the crmanager %+v", crmanager)
 	return crmanager, nil
+
+}
+
+func writesocket(event string) {
+
+	//ClientMap["hack"].Write(fmt.Sprintf("container %s: %s", value.ID, value.Status))
+	//ClientMap["hack"] = client
+}
+
+func socket(c *gin.Context) {
+	//var ClientMap map[string]*gateway.Client
 
 }
 
@@ -148,6 +173,8 @@ func Loadcrmasterapi(e *gin.Engine) *gin.Engine {
 		})
 	})
 	e.POST("crmonitor/register", doregister)
+
+	e.GET("crmonitor/socket", socket)
 
 	e.GET("crmonitor/project", getproject)
 

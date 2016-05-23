@@ -46,7 +46,8 @@ func GetCRMastermanager(etcd_url string) (*CRMastermanager, error) {
 
 func getContainerlistfromimage(projectname string, imagename string, etcdclient client.Client) ([]crtype.Container, error) {
 	kapi := client.NewKeysAPI(etcdclient)
-	key := Defaultrootkey + "/" + "images" + "/" + imagename + "/" + "tocontainers"
+	//key := Defaultrootkey + "/" + "images" + "/" + imagename + "/" + "tocontainers"
+	key := Defaultrootkey + "/" + "images" + "/" + imagename + "/" + projectname
 	log.Println("get key", key)
 	rawdata, err := kapi.Get(context.Background(), key, &client.GetOptions{Recursive: true})
 	log.Printf("the raw data %+v: \n", rawdata)

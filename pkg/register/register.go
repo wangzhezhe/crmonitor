@@ -1,6 +1,7 @@
 package register
 
 import (
+	"fmt"
 	"time"
 
 	"encoding/json"
@@ -93,9 +94,11 @@ func Containerregisterinit(rootkey string, hostip string, dockerclient *docker.C
 		repotag := container.Image
 		//TODO only support the compose env
 		//change this in future
-		//projectname := container.Labels["com.docker.compose.project"]
+		projectname := container.Labels["com.docker.compose.project"]
 		//neglect the container created by the image that contains <none>
-
+		if projectname == "" {
+			projectname = "default"
+		}
 		if strings.Contains(repotag, "none") {
 			continue
 		}
@@ -106,8 +109,10 @@ func Containerregisterinit(rootkey string, hostip string, dockerclient *docker.C
 			continue
 		}
 
-		inseartpath_container := imageinsertpath + "/" + repotag + "/" + Subcontainerdetailpath + "/" + container.ID
+		//inseartpath_container := imageinsertpath + "/" + repotag + "/" + Subcontainerdetailpath + "/" + container.ID
+		inseartpath_container := imageinsertpath + "/" + repotag + "/" + projectname + "/" + container.ID
 		// the original struct in docker client have been modified
+		log.Println("the container path", inseartpath_container)
 		container.Hostip = hostip
 		jsonvalue, err := json.Marshal(container)
 		if err != nil {
@@ -160,14 +165,21 @@ type Container struct {
 }
 */
 // it is ok to refresh the image info
+// FIX three kind of operatoions in fact
+// destroy -> delete the item
+// create  -> create the item
+// other   -> update the item
 func Containerinfoupdate(eventstatus string, containerid string, repotag string, hostip string, dockerclient *docker.Client, etcdclient etcdclientpack.Client) error {
 
 	kapi := etcdclientpack.NewKeysAPI(etcdclient)
-	//get the new status and update
+	//get the new status and update ()
 	cdetail, err := dockerclient.InspectContainer(containerid)
+
 	log.Println("the details", cdetail)
+	// if the status is destroy, do not need to inspect the container
+	// delete the info directly
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("error, failed to get the container %s details", containerid))
 	}
 	statustr := cdetail.State.String()
 	cmdstr := ""
@@ -187,10 +199,16 @@ func Containerinfoupdate(eventstatus string, containerid string, repotag string,
 		Hostip:  hostip,
 	}
 	projectname := cdetail.Config.Labels["com.docker.compose.project"]
+	if projectname == "" {
+		projectname = "default"
+	}
 	log.Println("the project name:", projectname)
-	insertpath := Defaultrootkey + "/" + Imagerootpath + "/" + repotag + "/" + Subcontainerdetailpath + "/" + containerid
+	//insertpath := Defaultrootkey + "/" + Imagerootpath + "/" + repotag + "/" + Subcontainerdetailpath + "/" + projectname + "/" + containerid
+	insertpath := Defaultrootkey + "/" + Imagerootpath + "/" + repotag + "/" + projectname + "/" + containerid
+
 	log.Println("the insert path:", insertpath)
 	//value.Status == "start" || value.Status == "die" || value.Status == "destroy" || value.Status == "create"
+	log.Println("--------", eventstatus)
 	if eventstatus == "start" || eventstatus == "die" || eventstatus == "create" {
 
 		jsonvalue, err := json.Marshal(apicontainer)
@@ -216,7 +234,7 @@ func Containerinfoupdate(eventstatus string, containerid string, repotag string,
 			}
 		}
 
-	} else if eventstatus == "destroy" {
+	} else if eventstatus == "destroy" || eventstatus == "kill" {
 		//delete the specific value in etcd
 		log.Println("do the destroy operation")
 		_, err := kapi.Delete(context.Background(), insertpath, nil)

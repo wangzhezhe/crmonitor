@@ -21,8 +21,25 @@
 			"revisionTime": "2016-04-14T23:39:28Z"
 		},
 		{
+			"checksumSHA1": "6DVd4tXfoer2bc5pcEVOj0bNf7w=",
+			"path": "github.com/itsjamie/gin-cors",
+			"revision": "97b4a9da79331dfa2b6d35f4cdd1e50f5148859c",
+			"revisionTime": "2016-04-20T13:07:02Z"
+		},
+		{
+			"checksumSHA1": "gcLub3oB+u4QrOJZcYmk/y2AP4k=",
+			"path": "github.com/nu7hatch/gouuid",
+			"revision": "179d4d0c4d8d407a32af483c2354df1d2c91e6c3",
+			"revisionTime": "2013-12-21T20:05:32Z"
+		},
+		{
 			"checksumSHA1": "nJE3D2CS5WnukPIlM9wzErF7tak=",
 			"path": "golang.org/x/net/context",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "mfJrsIbdHEdJ0LqSb3jDGTHZ5MU=",
+			"path": "golang.org/x/net/websocket",
 			"revision": ""
 		}
 	],

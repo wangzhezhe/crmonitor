@@ -48,8 +48,8 @@ type Nodeinfo struct {
 }
 
 type Event struct {
-	Action      string
-	Projectname string
-	Imagename   string
-	Containerid string
+	ProjectName string `json:"project_name"`
+	ImageName   string `json:"image_name"`
+	ContainerID string `json:"container_id"`
+	Event       string `json:"event"`
 }
