@@ -166,9 +166,9 @@ type Container struct {
 */
 // it is ok to refresh the image info
 // FIX three kind of operatoions in fact
-// destroy -> delete the item
-// create  -> create the item
-// other   -> update the item
+// start->running
+// destroy->delete
+// stop->stop
 func Containerinfoupdate(eventstatus string, containerid string, repotag string, hostip string, dockerclient *docker.Client, etcdclient etcdclientpack.Client) error {
 
 	kapi := etcdclientpack.NewKeysAPI(etcdclient)

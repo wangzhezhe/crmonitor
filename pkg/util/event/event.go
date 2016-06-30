@@ -20,6 +20,9 @@ type Eventmanager struct {
 //{Status:die ID:538ef372f9d2a2402d48fe61c1cffd3c5519db78b3b198203d5068fcd4deeb70 From:busybox:latest Time:1463214860}
 //{Status:destroy ID:538ef372f9d2a2402d48fe61c1cffd3c5519db78b3b198203d5068fcd4deeb70 From:busybox:latest Time:1463214860}
 // get event , update the container status in path
+// refer to the docker stats graph
+// https://docs.docker.com/engine/reference/api/docker_remote_api/#docker-events
+
 func (e *Eventmanager) Parsevent() {
 	dockerclient, err := clienttool.GetDockerClient(Defaultdockerendpoint)
 
@@ -44,10 +47,11 @@ func (e *Eventmanager) Parsevent() {
 		if ok == true {
 			log.Println("*****************")
 			log.Printf("get docker event %+v, the status %s", value, value.Status)
-			if value.Status == "start" || value.Status == "die" || value.Status == "destroy" || value.Status == "create" || value.Status == "kill" {
+			if value.Status == "start" || value.Status == "destroy" || value.Status == "stop" {
 				//reister the new container status into etcd
 				//rootkey string, status string, containerid string, repotag string
 				//eventstatus string, containerid string, repotag string, hostip string, dockerclient *docker.Client
+				//start->running destroy->delete stop->stop
 				log.Println("refreash the container")
 				//quit with the main process
 				register.Containerinfoupdate(value.Status, value.ID, value.From, DefaultHostip, dockerclient, etcdclient)
