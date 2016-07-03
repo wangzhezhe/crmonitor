@@ -9,6 +9,12 @@
 			"revisionTime": "2016-01-18T06:16:33Z"
 		},
 		{
+			"checksumSHA1": "Ufrex/PpclfqVToYNvjB1y4dg0A=",
+			"path": "github.com/docker/go-units",
+			"revision": "f2d77a61e3c169b43402a0a1e84f06daf29b8190",
+			"revisionTime": "2016-06-13T21:20:13Z"
+		},
+		{
 			"checksumSHA1": "AKNPmNOUJUMFaBBxq05QKbkpWwU=",
 			"path": "github.com/fsouza/go-dockerclient",
 			"revision": "b0f4fa94c14794e30cf3b9176e5dc4725d9552ed",
@@ -33,9 +39,16 @@
 			"revisionTime": "2013-12-21T20:05:32Z"
 		},
 		{
-			"checksumSHA1": "nJE3D2CS5WnukPIlM9wzErF7tak=",
+			"checksumSHA1": "9jjO5GjLa0XF/nfWihF02RoH4qc=",
 			"path": "golang.org/x/net/context",
-			"revision": ""
+			"revision": "b400c2eff1badec7022a8c8f5bea058b6315eed7",
+			"revisionTime": "2016-06-19T19:44:24Z"
+		},
+		{
+			"checksumSHA1": "LvdVRE0FqdR68SvVpRkHs1rxhcA=",
+			"path": "golang.org/x/net/proxy",
+			"revision": "b400c2eff1badec7022a8c8f5bea058b6315eed7",
+			"revisionTime": "2016-06-19T19:44:24Z"
 		},
 		{
 			"checksumSHA1": "mfJrsIbdHEdJ0LqSb3jDGTHZ5MU=",

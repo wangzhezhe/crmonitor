@@ -1,23 +1,38 @@
 package clienttool
 
 import (
-	"github.com/fsouza/go-dockerclient"
+	dockerclient "github.com/docker/engine-api/client"
+	//"github.com/docker/engine-api/types"
+	//"golang.org/x/net/context"
 )
 
-//attention !!!
+//attention !!! use engine api to interact with docker
 //the agent should be started with the sudo privilege
 //the dockerclient could not access the unix:///var/run/docker.sock otherwise
 
-var Dockerclient *docker.Client
+type DockerClient struct {
+	client *dockerclient.Client
+}
 
-func GetDockerClient(endpoint string) (*docker.Client, error) {
-	if Dockerclient != nil {
-		return Dockerclient, nil
-	}
-	Dockerclient, err := docker.NewClient(endpoint)
-	if err != nil {
-		return nil, err
+var DefaultDockerClient *DockerClient
+
+func GetDockerClient(endpoint string) (*DockerClient, error) {
+	if DefaultDockerClient != nil {
+		return DefaultDockerClient, nil
+	} else {
+		defaultHeaders := map[string]string{"User-Agent": "engine-api-cli-1.0"}
+		cli, err := dockerclient.NewClient(endpoint, "v1.22", nil, defaultHeaders)
+		if err != nil {
+			return nil, err
+		}
+
+		newClient := &DockerClient{
+			client: cli,
+		}
+		DefaultDockerClient = newClient
+
 	}
 
-	return Dockerclient, nil
+	return DefaultDockerClient, nil
+
 }
