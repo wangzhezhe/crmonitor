@@ -11,7 +11,7 @@ import (
 //the dockerclient could not access the unix:///var/run/docker.sock otherwise
 
 type DockerClient struct {
-	client *dockerclient.Client
+	*dockerclient.Client
 }
 
 var DefaultDockerClient *DockerClient
@@ -27,7 +27,7 @@ func GetDockerClient(endpoint string) (*DockerClient, error) {
 		}
 
 		newClient := &DockerClient{
-			client: cli,
+			Client: cli,
 		}
 		DefaultDockerClient = newClient
 

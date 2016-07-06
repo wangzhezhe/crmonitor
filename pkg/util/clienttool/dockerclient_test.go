@@ -85,7 +85,7 @@ func TestInspectContainer(t *testing.T) {
 		t.Error(err)
 	}
 	containerID := "6d59e0d97082"
-	inspectInfo, err := cli.client.ContainerInspect(context.Background(), containerID)
+	inspectInfo, err := cli.ContainerInspect(context.Background(), containerID)
 	if err != nil {
 		t.Error(err)
 	}
