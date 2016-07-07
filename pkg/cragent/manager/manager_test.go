@@ -19,14 +19,14 @@ func TestGetLabels(t *testing.T) {
 
 func TestGetContainerAllInfo(t *testing.T) {
 	manager := &Manager{}
-	containerID := "096eeebb39f13b271c9fdae8a8221a0b92f1c4a21e946d4a9d64a73b7c72aa50"
-	containerInfo, err := manager.GetContainerAllInfo(containerID)
+	containerID := "6b0fbdab7231c659f16160e6cfd5403ff57bc5633f29805194b089e0593d8f1c"
+	containerInfo, err := manager.GetContainerAllInfo(containerID, 1)
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Printf("container info: %+v ", containerInfo)
+	fmt.Printf("container info: %+v \n", containerInfo)
 	time.Sleep(time.Second * 10)
-	containerInfo, err = manager.GetContainerAllInfo(containerID)
+	containerInfo, err = manager.GetContainerAllInfo(containerID, 1)
 	if err != nil {
 		t.Error(err)
 	}

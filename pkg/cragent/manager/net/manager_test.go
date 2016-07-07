@@ -19,7 +19,7 @@ func TestGetNetInfo(t *testing.T) {
 
 func TestGetNetInfoFromProc(t *testing.T) {
 	//container with the default docker network
-	pida := 5408
+	pida := 15014
 	netManager := &NetManager{}
 	interfaceArray, err := netManager.GetNetInfoFromProc(pida)
 	if err != nil {
@@ -28,7 +28,7 @@ func TestGetNetInfoFromProc(t *testing.T) {
 	log.Printf("the interface array for pid %d is: %+v \n", pida, interfaceArray)
 
 	//container without the network=host
-	pidb := 16513
+	pidb := 15014
 	interfaceArray, err = netManager.GetNetInfoFromProc(pidb)
 	if err != nil {
 		t.Error(err)

@@ -36,7 +36,9 @@ type InterfaceStats struct {
 	// Cumulative count of transmit errors encountered.
 	TxErrors uint64 `json:"tx_errors"`
 	// Cumulative count of packets dropped while transmitting.
-	TxDropped uint64 `json:"tx_dropped"`
+	TxDropped   uint64  `json:"tx_dropped"`
+	RxBytesRate float32 `json:"rx_bytes_rate"`
+	TxBytesRate float32 `json:"tx_bytes_rate"`
 }
 
 type NetManager struct {
@@ -63,16 +65,20 @@ func (*NetManager) GetNetInfoFromSys(dev string, stat string) (int, error) {
 // input the pid and get the array of interfacesstats in this namespace
 // refer to libcontainers/helpers.go
 // show network info in same namespace
-func (*NetManager) GetNetInfoFromProc(pid int) ([]InterfaceStats, error) {
+func (*NetManager) GetNetInfoFromProc(pid int) (map[string]InterfaceStats, error) {
 
 	netStatsFile := path.Join(DefaultProc, strconv.Itoa(pid), "/net/dev")
 
 	ifaceStats, err := scanInterfaceStats(netStatsFile)
 	if err != nil {
-		return []InterfaceStats{}, fmt.Errorf("couldn't read network stats: %v", err)
+		return nil, fmt.Errorf("couldn't read network stats: %v", err)
+	}
+	interfacesMap := make(map[string]InterfaceStats)
+	for _, item := range ifaceStats {
+		interfacesMap[item.Name] = item
 	}
 
-	return ifaceStats, nil
+	return interfacesMap, nil
 
 }
 func isIgnoredDevice(ifName string) bool {

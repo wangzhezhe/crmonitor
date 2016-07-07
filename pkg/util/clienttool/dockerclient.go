@@ -3,7 +3,7 @@ package clienttool
 import (
 	dockerclient "github.com/docker/engine-api/client"
 	//"github.com/docker/engine-api/types"
-	//"golang.org/x/net/context"
+	"golang.org/x/net/context"
 )
 
 //attention !!! use engine api to interact with docker
@@ -34,5 +34,12 @@ func GetDockerClient(endpoint string) (*DockerClient, error) {
 	}
 
 	return DefaultDockerClient, nil
+}
 
+func (client *DockerClient) GetPidFromContainerID(containerID string) (int, error) {
+	inspectInfo, err := client.ContainerInspect(context.Background(), containerID)
+	if err != nil {
+		return -1, err
+	}
+	return inspectInfo.State.Pid, nil
 }

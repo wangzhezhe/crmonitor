@@ -1,12 +1,12 @@
 package manager
 
 import (
+	"log"
 	"regexp"
 
 	"github.com/crmonitor/pkg/cragent/manager/cpu"
 	"github.com/crmonitor/pkg/cragent/manager/memory"
 	"github.com/crmonitor/pkg/cragent/manager/net"
-
 	"github.com/crmonitor/pkg/util/clienttool"
 	"golang.org/x/net/context"
 )
@@ -47,16 +47,20 @@ func init() {
 	ContainerCurrnetDetail = make(map[string]*ContainerResource)
 }
 
+//register all the container info into ContainerCurrnetDetail (add labels)
+func (m *Manager) RegisterContainer() {
+
+}
+
 // get info at this point
-func (m *Manager) GetContainerAllInfo(containerID string) (*ContainerResource, error) {
+func (m *Manager) GetContainerAllInfo(containerID string, interval int) (*ContainerResource, error) {
 	lastContainerInfo, ok := ContainerCurrnetDetail[containerID]
-	_ = lastContainerInfo
 	var firstCheck bool
 	firstCheck = false
+
 	if ok == false {
 		//first time to get the container info
-		lastContainerInfo := &ContainerResource{}
-		_ = lastContainerInfo
+		lastContainerInfo = &ContainerResource{}
 		firstCheck = true
 
 	} else {
@@ -64,7 +68,7 @@ func (m *Manager) GetContainerAllInfo(containerID string) (*ContainerResource, e
 	}
 
 	//cpu
-	cpuInfopath := "/sys/fs/cgroup" + cpu.CpuacctSubCgroupPath + "/" + containerID
+	cpuInfopath := DefaultCgroupDir + cpu.CpuacctSubCgroupPath + "/" + containerID
 	currTotalTime, err := m.CpuManager.GetTotalCpuTime()
 	if err != nil {
 		return nil, err
@@ -80,21 +84,76 @@ func (m *Manager) GetContainerAllInfo(containerID string) (*ContainerResource, e
 	}
 	if firstCheck == false {
 		sysPercen := 100 * float32(currSysTime-lastContainerInfo.Ctncpu.SysTime) / float32(currTotalTime-lastContainerInfo.Ctncpu.TotalTime)
-		userPercen := 100 * float32(currSysTime-lastContainerInfo.Ctncpu.SysTime) / float32(currTotalTime-lastContainerInfo.Ctncpu.TotalTime)
+		userPercen := 100 * float32(currUserTime-lastContainerInfo.Ctncpu.UserTime) / float32(currTotalTime-lastContainerInfo.Ctncpu.TotalTime)
 		currCpuInfo.SysPencen = sysPercen
 		currCpuInfo.UserPencen = userPercen
 	}
 
 	//mem
+	memInfoPath := DefaultCgroupDir + memory.MemSubCgroupPath + "/" + containerID
+
+	currMemUsage, err := m.MemoryManager.GetContainerMemCapacity(memInfoPath)
+	if err != nil {
+		return nil, err
+	}
+	memUpLimit, err := m.MemoryManager.GetContainerMemLimit(memInfoPath)
+	log.Println("the total mem: ", memUpLimit)
+	if err != nil {
+		return nil, err
+	}
+	memPercen := 100 * float32(currMemUsage) / float32(memUpLimit)
+
+	currMemInfo := Ctnmem{
+		memUsage:   float64(currMemUsage),
+		memUpLimit: memUpLimit,
+		memPercen:  memPercen,
+	}
 
 	//net
+	//currFstPid := lastContainerInfo.CtnBasic.FstPid
+	dockerClient, err := clienttool.GetDockerClient(DefaultDockerEndpoint)
+	if err != nil {
+		return nil, err
+	}
+	currFstPid, err := dockerClient.GetPidFromContainerID(containerID)
+	if err != nil {
+		return nil, err
+	}
+	lastInterfaceMap := lastContainerInfo.Ctnnet.InterfacesMap
+	currInterfaceMap, err := m.NetManager.GetNetInfoFromProc(currFstPid)
+	if err != nil {
+		return nil, err
+	}
+	tmpMap := currInterfaceMap
+	for key, value := range tmpMap {
+		if firstCheck == false {
 
-	//label
+			rxBytesRate := float32(value.RxBytes-lastInterfaceMap[key].RxBytes) / float32(interval)
+			txBytesRate := float32(value.TxBytes-lastInterfaceMap[key].TxBytes) / float32(interval)
+			//update the value in map
+			tmpInterface := currInterfaceMap[key]
+			//could not assign the struct in map directly
+			tmpInterface.RxBytesRate = rxBytesRate
+			tmpInterface.TxBytesRate = txBytesRate
+			currInterfaceMap[key] = tmpInterface
+
+		}
+	}
+
+	currNetInfo := Ctnnet{
+		InterfacesMap: currInterfaceMap,
+	}
+
+	//label (the label info should be detected and added into the container info when register the contaienr at the first time)
 
 	//return currContainerInfo, nil
 
 	currContainerInfo := &ContainerResource{
-		Ctncpu: currCpuInfo,
+		Ctncpu:    currCpuInfo,
+		Ctnmem:    currMemInfo,
+		Ctnnet:    currNetInfo,
+		CtnLabels: lastContainerInfo.CtnLabels, //use the last label info
+		CtnBasic:  lastContainerInfo.CtnBasic,
 	}
 
 	//update the old container info

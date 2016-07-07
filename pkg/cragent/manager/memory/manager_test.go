@@ -16,4 +16,10 @@ func TestGetContainerMemCapacity(t *testing.T) {
 	}
 	log.Println("rss+cache: ", value)
 
+	//check the mem limitation
+	memUplimit, err := memManager.GetContainerMemLimit(path)
+	if err != nil {
+		t.Error(err)
+	}
+	log.Println("the up limitation: ", memUplimit)
 }

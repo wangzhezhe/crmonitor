@@ -1,5 +1,9 @@
 package manager
 
+import (
+	"github.com/crmonitor/pkg/cragent/manager/net"
+)
+
 //weird error for test when put the struct into the crtype/types.go
 //unknown crtype.Ctncpu field 'SysTime' in struct literal
 
@@ -16,13 +20,14 @@ type Ctncpu struct {
 
 //Ctnmem
 type Ctnmem struct {
-	memUsage int //rss+cache / total
+	memUsage   float64 //rss+cache
+	memUpLimit float64
+	memPercen  float32
 }
 
 //Ctnnet
 type Ctnnet struct {
-	rxBytesRate int
-	txBytesRate int
+	InterfacesMap map[string]net.InterfaceStats
 }
 
 //Ctnlabel
@@ -32,7 +37,12 @@ type CtnLabels struct {
 	CustomizeLabels map[string]string
 }
 
+type CtnBasic struct {
+	FstPid int
+}
+
 type ContainerResource struct {
+	CtnBasic
 	Ctncpu
 	Ctnmem
 	Ctnnet
