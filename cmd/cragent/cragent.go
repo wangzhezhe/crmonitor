@@ -1,4 +1,4 @@
-package app
+package main
 
 import (
 	"fmt"
@@ -15,13 +15,8 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	c := app.NewCRAgent()
-	err := c.AddFlags()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 
-	if err = app.Run(c); err != nil {
+	if err := app.Run(c); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}

@@ -53,39 +53,3 @@ type Event struct {
 	ContainerID string `json:"container_id"`
 	Event       string `json:"event"`
 }
-
-//the final value to be stored in influxdb
-//Ctncpu
-
-type Ctncpu struct {
-	userPencen int //the percentage of user time in last 1s
-	sysPencen  int //the percentage of sys time in last 1s
-	totalTime  int
-	sysTime    int
-	userTime   int
-}
-
-//Ctnmem
-type Ctnmem struct {
-	memUsage int //rss+cache / total
-}
-
-//Ctnnet
-type Ctnnet struct {
-	rxBytesRate int
-	txBytesRate int
-}
-
-//Ctnlabel
-
-type CtnLabels struct {
-	OriginalLabels  map[string]string
-	CustomizeLabels map[string]string
-}
-
-type ContainerResource struct {
-	Ctncpu
-	Ctnmem
-	Ctnnet
-	CtnLabels
-}
