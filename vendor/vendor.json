@@ -9,6 +9,18 @@
 			"revisionTime": "2016-01-18T06:16:33Z"
 		},
 		{
+			"checksumSHA1": "cNqg09B2RtZ64/pnrOTBOTkejh0=",
+			"path": "github.com/docker/engine-api/client",
+			"revision": "c9b5a47a3a6fea97d0a2242307ad25a3331ce03b",
+			"revisionTime": "2016-05-26T06:52:53Z"
+		},
+		{
+			"checksumSHA1": "9PaIIICwN5SG+yCr87kYcV9GETM=",
+			"path": "github.com/docker/engine-api/types/events",
+			"revision": "c9b5a47a3a6fea97d0a2242307ad25a3331ce03b",
+			"revisionTime": "2016-05-26T06:52:53Z"
+		},
+		{
 			"checksumSHA1": "Ufrex/PpclfqVToYNvjB1y4dg0A=",
 			"path": "github.com/docker/go-units",
 			"revision": "f2d77a61e3c169b43402a0a1e84f06daf29b8190",

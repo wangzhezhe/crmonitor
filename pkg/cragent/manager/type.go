@@ -11,8 +11,8 @@ import (
 //Ctncpu
 
 type Ctncpu struct {
-	UserPencen float32 //the percentage (%) of user time in last interval time
-	SysPencen  float32 //the percentage (%) of sys time in last interval time
+	UserPercen float32 //the percentage (%) of user time in last interval time
+	SysPercen  float32 //the percentage (%) of sys time in last interval time
 	TotalTime  int
 	SysTime    int
 	UserTime   int
@@ -35,6 +35,10 @@ type Ctnnet struct {
 type CtnLabels struct {
 	OriginalLabels  map[string]string
 	CustomizeLabels map[string]string
+	// customizelabel should include
+	// hostip
+	// containerid
+	// hostport
 }
 
 type CtnBasic struct {
@@ -47,4 +51,10 @@ type ContainerResource struct {
 	Ctnmem
 	Ctnnet
 	CtnLabels
+}
+
+type ContaienrMetric struct {
+	Cpu    string
+	Memory string
+	Net    string
 }

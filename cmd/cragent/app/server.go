@@ -1,22 +1,11 @@
 package app
 
 import (
-	"encoding/json"
-	"errors"
-	"flag"
-	"log"
 	"time"
 
-	"golang.org/x/net/context"
+	"github.com/crmonitor/cmd/cragent/conf"
 
-	"strconv"
-
-	"github.com/coreos/etcd/client"
-	"github.com/crmonitor/pkg/api"
-	"github.com/crmonitor/pkg/crtype"
-	"github.com/crmonitor/pkg/register"
-	etcdclienttool "github.com/crmonitor/pkg/util/clienttool"
-	"github.com/crmonitor/pkg/util/event"
+	"github.com/crmonitor/pkg/cragent/manager"
 )
 
 var (
@@ -33,10 +22,10 @@ var (
 
 type CRAgent struct {
 	//the url should be like http://127.0.0.1:4001
-	ETCD_URL   string
-	Etcdclient client.Client
-	TTL        time.Duration
-	Hostip     string
+	//ETCD_URL   string
+	//Etcdclient client.Client
+	TTL    time.Duration
+	Hostip string
 }
 
 func NewCRAgent() *CRAgent {
@@ -49,59 +38,68 @@ func NewCRAgent() *CRAgent {
 }
 
 func Run(c *CRAgent) error {
-	etcdclient, err := etcdclienttool.GetEtcdclient(c.ETCD_URL)
-	c.Etcdclient = etcdclient
-	if err != nil {
-		log.Println("failed to register the crmagent")
-	}
+	interval := conf.GlobalConfig.Interval
+	manager := &manager.Manager{Interval: interval}
+	manager.Start()
 
-	//register the agent to the etcd
-	Nodeinstance := c.Getregisternodeinstance()
-	registerValue, err := json.Marshal(Nodeinstance)
-	if err != nil {
-		log.Println("error , failed to marshal Nodeinstance ," + err.Error())
-	}
-	registeroption := &register.Registeroption{
-		TTL:        c.TTL,
-		Etcdclient: c.Etcdclient,
-		Key:        Defaultrootkey + "/" + "cragent",
-		Value:      string(registerValue),
-	}
-	err = c.Doregister(registeroption)
-	if err != nil {
-		log.Println("error , could not register into etcd: ", err.Error())
-	}
+	/*
+		etcdclient, err := etcdclienttool.GetEtcdclient(c.ETCD_URL)
+		c.Etcdclient = etcdclient
+		if err != nil {
+			log.Println("failed to register the crmagent")
+		}
 
-	//start the docker driver
+		//register the agent to the etcd
+		Nodeinstance := c.Getregisternodeinstance()
+		registerValue, err := json.Marshal(Nodeinstance)
+		if err != nil {
+			log.Println("error , failed to marshal Nodeinstance ," + err.Error())
+		}
+		registeroption := &register.Registeroption{
+			TTL:        c.TTL,
+			Etcdclient: c.Etcdclient,
+			Key:        Defaultrootkey + "/" + "cragent",
+			Value:      string(registerValue),
+		}
+		err = c.Doregister(registeroption)
+		if err != nil {
+			log.Println("error , could not register into etcd: ", err.Error())
+		}
 
-	//collect and register the image info
-	dockerclient, err := etcdclienttool.GetDockerClient(DefaultDockerdaemon)
-	if err != nil {
-		log.Println("error , failed yo get dockerclient", err)
-	}
-	register.Defaultrootkey = Defaultrootkey
-	err = register.Imageregisterinit(register.Defaultrootkey, dockerclient, etcdclient)
-	if err != nil {
-		log.Println("error , failed to do the image init", err)
-	}
-	//collect and register the container info
-	err = register.Containerregisterinit(register.Defaultrootkey, DefaultHostip, dockerclient, etcdclient)
-	if err != nil {
-		log.Println("error , failed to do the container init", err)
-	}
+		//start the docker driver
 
-	//create the event manager and start to listen the docker client
-	eventmanager := event.Eventmanager{}
-	//the go routine is ended with the main process
-	go func() { eventmanager.Parsevent() }()
+		//collect and register the image info
+		dockerclient, err := etcdclienttool.GetDockerClient(DefaultDockerdaemon)
+		if err != nil {
+			log.Println("error , failed yo get dockerclient", err)
+		}
+		register.Defaultrootkey = Defaultrootkey
+		err = register.Imageregisterinit(register.Defaultrootkey, dockerclient, etcdclient)
+		if err != nil {
+			log.Println("error , failed to do the image init", err)
+		}
+		//collect and register the container info
+		err = register.Containerregisterinit(register.Defaultrootkey, DefaultHostip, dockerclient, etcdclient)
+		if err != nil {
+			log.Println("error , failed to do the container init", err)
+		}
 
-	//start the api server
-	apiengine := api.Getengine()
-	apiengine = api.Loadcragentapi(apiengine)
-	apiengine.Run(":" + strconv.Itoa(DefaultServerport))
+		//create the event manager and start to listen the docker client
+		eventmanager := event.Eventmanager{}
+		//the go routine is ended with the main process
+		go func() { eventmanager.Parsevent() }()
+
+		//start the api server
+		apiengine := api.Getengine()
+		apiengine = api.Loadcragentapi(apiengine)
+		apiengine.Run(":" + strconv.Itoa(DefaultServerport))
+		return nil
+	*/
 	return nil
+
 }
 
+/*
 func (c *CRAgent) AddFlags() error {
 	flag.StringVar(&c.ETCD_URL, "etcd_url", "http://127.0.0.1:4001", "the url of etcd for crmonitor like http://127.0.0.1:4001")
 	flag.StringVar(&DefaultHostip, "hostip", "", "the ip to register into the etcd")
@@ -160,3 +158,4 @@ func (c *CRAgent) Doregister(option *register.Registeroption) error {
 
 	return nil
 }
+*/
