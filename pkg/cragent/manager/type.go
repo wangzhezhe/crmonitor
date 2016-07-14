@@ -43,6 +43,7 @@ type CtnLabels struct {
 
 type CtnBasic struct {
 	FstPid int
+	Status string
 }
 
 type ContainerResource struct {

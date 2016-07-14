@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"regexp"
+	"strconv"
 
 	"time"
 
@@ -100,10 +101,11 @@ func init() {
 	}
 }
 
-func (m *Manager) GetCustomizeLabel(containerID string) map[string]string {
+func (m *Manager) GetCustomizeLabel(containerID string, inspectInfo types.ContainerJSON) map[string]string {
 	labels := make(map[string]string)
-	labels["contianerID"] = containerID
+	labels["containerID"] = containerID
 	labels["hostip"] = conf.GlobalConfig.DefaultHostip
+	//labels["status"] = inspectInfo.ContainerJSONBase.State.Status
 
 	return labels
 
@@ -126,7 +128,7 @@ func (m *Manager) GetLabels(containerID string) (map[string]string, map[string]s
 
 	customizelabels := make(map[string]string)
 
-	customizelabels = m.GetCustomizeLabel(containerID)
+	customizelabels = m.GetCustomizeLabel(containerID, inspectInfo)
 
 	customizelabels["image"] = inspectInfo.Image
 
@@ -280,7 +282,9 @@ func (m *Manager) HousKeeping(interval int, containerDetailMap map[string]*Conta
 
 // get info at this point
 func (m *Manager) GetContainerAllInfo(containerID string, interval int) (*ContainerResource, error) {
+
 	lastContainerInfo, ok := ContainerCurrnetDetail[containerID]
+
 	var firstCheck bool
 	firstCheck = false
 
@@ -291,6 +295,34 @@ func (m *Manager) GetContainerAllInfo(containerID string, interval int) (*Contai
 
 	} else {
 		lastContainerInfo = ContainerCurrnetDetail[containerID]
+	}
+
+	//basic info
+	dockerClient, err := clienttool.GetDockerClient(DefaultDockerEndpoint)
+	if err != nil {
+		return nil, err
+	}
+	currFirstPid, currStatus, err := dockerClient.GetBasicInfoFromContainerID(containerID)
+	if err != nil {
+		return nil, err
+	}
+	currBasicInfo := CtnBasic{
+		FstPid: currFirstPid,
+		Status: currStatus,
+	}
+
+	if currStatus != "running" {
+
+		currContainerInfo := &ContainerResource{
+
+			CtnLabels: lastContainerInfo.CtnLabels, //use the last label info
+			CtnBasic:  currBasicInfo,
+		}
+
+		//update the old container info
+		ContainerCurrnetDetail[containerID] = currContainerInfo
+		return currContainerInfo, nil
+
 	}
 
 	//cpu
@@ -337,16 +369,9 @@ func (m *Manager) GetContainerAllInfo(containerID string, interval int) (*Contai
 
 	//net
 	//currFstPid := lastContainerInfo.CtnBasic.FstPid
-	dockerClient, err := clienttool.GetDockerClient(DefaultDockerEndpoint)
-	if err != nil {
-		return nil, err
-	}
-	currFstPid, err := dockerClient.GetPidFromContainerID(containerID)
-	if err != nil {
-		return nil, err
-	}
+
 	lastInterfaceMap := lastContainerInfo.Ctnnet.InterfacesMap
-	currInterfaceMap, err := m.NetManager.GetNetInfoFromProc(currFstPid)
+	currInterfaceMap, err := m.NetManager.GetNetInfoFromProc(currFirstPid)
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +403,7 @@ func (m *Manager) GetContainerAllInfo(containerID string, interval int) (*Contai
 		Ctnmem:    currMemInfo,
 		Ctnnet:    currNetInfo,
 		CtnLabels: lastContainerInfo.CtnLabels, //use the last label info
-		CtnBasic:  lastContainerInfo.CtnBasic,
+		CtnBasic:  currBasicInfo,
 	}
 
 	//update the old container info
@@ -421,6 +446,10 @@ func (m *Manager) TransferIntoInfluxData(containerID string, resource *Container
 	for k, v := range resource.CustomizeLabels {
 		tags[k] = v
 	}
+	//add the container status and first pid
+	tags["firstpid"] = strconv.Itoa(resource.CtnBasic.FstPid)
+
+	tags["status"] = resource.CtnBasic.Status
 
 	//cpu
 	measurement := ContainerMetricName.Cpu

@@ -36,10 +36,10 @@ func GetDockerClient(endpoint string) (*DockerClient, error) {
 	return DefaultDockerClient, nil
 }
 
-func (client *DockerClient) GetPidFromContainerID(containerID string) (int, error) {
+func (client *DockerClient) GetBasicInfoFromContainerID(containerID string) (int, string, error) {
 	inspectInfo, err := client.ContainerInspect(context.Background(), containerID)
 	if err != nil {
-		return -1, err
+		return -1, "", err
 	}
-	return inspectInfo.State.Pid, nil
+	return inspectInfo.State.Pid, inspectInfo.State.Status, nil
 }
