@@ -265,6 +265,7 @@ func (m *Manager) HousKeeping(interval int, containerDetailMap map[string]*Conta
 			//send influxdata into influx db
 			//log.Printf("new container info for %s: %+v\n ", key, newInfo)
 			//TODO get info from env
+			dbName := conf.GlobalConfig.DefaultInfluxDBContainer
 			influxClient, err := clienttool.GetinfluxClient()
 			if err != nil {
 				log.Println("failed to get the influxclient")

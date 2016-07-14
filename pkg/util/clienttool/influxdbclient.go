@@ -46,13 +46,13 @@ func queryDB(clnt influxpackage.Client, cmd string, dbname string) (res []influx
 	return res, nil
 }
 
-func GetinfluxClient() (*InfluxdbStorage, error) {
+func GetinfluxClient(dbname string) (*InfluxdbStorage, error) {
 	//influxserver string, username string, password string, dbname string
 	influxserver := conf.GlobalConfig.DefaultInfluxURL
-	dbname := conf.GlobalConfig.DefaultInfluxDB
+
 	username := ""
 	password := ""
-	if InfluxClient != nil {
+	if InfluxClient != nil && InfluxClient.Database == dbname {
 		return InfluxClient, nil
 	}
 	client, err := NewinfluxClient(influxserver, username, password, dbname)
