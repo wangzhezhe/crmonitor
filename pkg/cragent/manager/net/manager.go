@@ -175,4 +175,28 @@ tx_bytes             tx_compressed        tx_errors            tx_heartbeat_erro
 root@ubuntu:/var/run/docker/netns# cat /sys/class/net/veth3154216/statistics/tx_bytes
 11715
 root@ubuntu:/var/run/docker/netns#
+
+
+refer docker-proxy
+http://windsock.io/tag/docker-proxy/
+
+listenports-> docker-proxy pid
+
+gap:
+when inspect the container , we could get the IPAddress of the contaienr
+when we inspect the docker-proxy we could get the dest ip of this proxy
+then we could make some index operaion to get the container id
+containerid-> firstpid
+
+userland-proxy to controle the proxy start
+
+see the disadvantage of docker-proxy:http://www.dataguru.cn/thread-544489-1-1.html
+
+input: the port
+output: the containerid and the hostip
+
+case a: using net==host, find pid from lsof -> /proc/cgroup(if in cgroup control) -> get contaienr id
+
+case b: using default mode listen pid -> docker-proxy -> find dest ip -> find containerid by index map
+
 */

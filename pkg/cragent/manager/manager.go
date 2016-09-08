@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/crmonitor/cmd/cragent/conf"
+	"github.com/crmonitor/pkg/cragent/manager/blkio"
 	"github.com/crmonitor/pkg/cragent/manager/cpu"
 	"github.com/crmonitor/pkg/cragent/manager/memory"
 	"github.com/crmonitor/pkg/cragent/manager/net"
@@ -83,6 +84,7 @@ type Manager struct {
 	net.NetManager
 	cpu.CpuManager
 	memory.MemoryManager
+	blkio.BlkIOManager
 	Interval int
 }
 
@@ -98,6 +100,7 @@ func init() {
 		Cpu:    "cpu",
 		Memory: "memory",
 		Net:    "net",
+		Blkio:  "blkio",
 	}
 }
 
@@ -266,7 +269,7 @@ func (m *Manager) HousKeeping(interval int, containerDetailMap map[string]*Conta
 			//log.Printf("new container info for %s: %+v\n ", key, newInfo)
 			//TODO get info from env
 			dbName := conf.GlobalConfig.DefaultInfluxDBContainer
-			influxClient, err := clienttool.GetinfluxClient()
+			influxClient, err := clienttool.GetinfluxClient(dbName)
 			if err != nil {
 				log.Println("failed to get the influxclient")
 				continue
@@ -368,6 +371,25 @@ func (m *Manager) GetContainerAllInfo(containerID string, interval int) (*Contai
 		memPercen:  memPercen,
 	}
 
+	//blkio
+	blkioPath := DefaultCgroupDir + blkio.BlkioSubCgroupPath + "/" + containerID
+
+	currBlkRBytes, currBlkWBytes, err := m.BlkIOManager.GetBlkio(blkioPath)
+	if err != nil {
+		return nil, err
+	}
+
+	rbytesps := (currBlkRBytes - lastContainerInfo.Ctnblkio.currBlkrbytes) / interval
+	wbytesps := (currBlkWBytes - lastContainerInfo.Ctnblkio.currBlkwbytes) / interval
+	currBlkIOInfo := Ctnblkio{
+		currBlkrbytes: currBlkRBytes,
+		currBlkwbytes: currBlkWBytes,
+		rbytesps:      rbytesps,
+		wbytesps:      wbytesps,
+	}
+	//debug
+	log.Printf("the blkioinfo %+v : ", currBlkIOInfo)
+
 	//net
 	//currFstPid := lastContainerInfo.CtnBasic.FstPid
 
@@ -403,6 +425,7 @@ func (m *Manager) GetContainerAllInfo(containerID string, interval int) (*Contai
 		Ctncpu:    currCpuInfo,
 		Ctnmem:    currMemInfo,
 		Ctnnet:    currNetInfo,
+		Ctnblkio:  currBlkIOInfo,
 		CtnLabels: lastContainerInfo.CtnLabels, //use the last label info
 		CtnBasic:  currBasicInfo,
 	}
@@ -470,6 +493,16 @@ func (m *Manager) TransferIntoInfluxData(containerID string, resource *Container
 		"memuplimit": resource.Ctnmem.memUpLimit,
 		"memusage":   resource.Ctnmem.memUsage,
 		"mempercern": resource.Ctnmem.memPercen,
+	}
+
+	influxData = &clienttool.InfluxData{Measurement: measurement, Fields: fields, Tags: tags}
+	influxList = append(influxList, influxData)
+
+	//blkio
+	measurement = ContainerMetricName.Blkio
+	fields = map[string]interface{}{
+		"blkiorps": resource.Ctnblkio.rbytesps,
+		"blkiowps": resource.Ctnblkio.wbytesps,
 	}
 
 	influxData = &clienttool.InfluxData{Measurement: measurement, Fields: fields, Tags: tags}

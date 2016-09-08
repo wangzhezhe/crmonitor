@@ -22,7 +22,7 @@ var GlobalConfig *Config
 func init() {
 	intervalStr := os.Getenv("INTERVALTIME")
 	if intervalStr == "" {
-		panic("the env INTERVAL should not be empty")
+		panic("the env INTERVALTIME should not be empty")
 	}
 	interval, err := strconv.Atoi(intervalStr)
 	if err != nil {
@@ -30,7 +30,7 @@ func init() {
 	}
 
 	if !(interval < 10 && interval > 0) {
-		panic("the env INTERVAL should between 0-9")
+		panic("the env INTERVALTIME should between 0-9")
 	}
 
 	hostIP := os.Getenv("HOSTIP")

@@ -183,12 +183,19 @@ func getInfluxDataFromHttpInstance(httpinstance *HttpTransaction) []*clienttool.
 
 	fields := make(map[string]interface{})
 	fields["respondtime"] = httpinstance.Respondtime
+	//add the port info into fields at the same time
+	fields["fields_destip"] = httpinstance.Destip
+	fields["fields_destport"] = httpinstance.Destport
+	fields["fields_srcip"] = httpinstance.Srcip
+	fields["fields_srcport"] = httpinstance.Srcport
 
 	tags := make(map[string]string)
-	tags["destip"] = httpinstance.Destip
-	tags["destport"] = httpinstance.Destport
-	tags["srcip"] = httpinstance.Srcip
-	tags["srcport"] = httpinstance.Srcport
+	tags["tags_destip"] = httpinstance.Destip
+	tags["tags_destport"] = httpinstance.Destport
+	tags["tags_srcip"] = httpinstance.Srcip
+	tags["tags_srcport"] = httpinstance.Srcport
+	tags["tags_srcaddr"] = httpinstance.Srcip + ":" + httpinstance.Srcport
+	tags["tags_destaddr"] = httpinstance.Destip + ":" + httpinstance.Destport
 	data := &clienttool.InfluxData{
 		Measurement: measurement,
 		Fields:      fields,

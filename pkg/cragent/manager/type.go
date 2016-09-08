@@ -25,6 +25,13 @@ type Ctnmem struct {
 	memPercen  float32
 }
 
+type Ctnblkio struct {
+	currBlkrbytes int
+	currBlkwbytes int
+	rbytesps      int
+	wbytesps      int
+}
+
 //Ctnnet
 type Ctnnet struct {
 	InterfacesMap map[string]net.InterfaceStats
@@ -42,8 +49,9 @@ type CtnLabels struct {
 }
 
 type CtnBasic struct {
-	FstPid int
-	Status string
+	FstPid      int
+	Status      string
+	ContaienrIP string
 }
 
 type ContainerResource struct {
@@ -51,11 +59,13 @@ type ContainerResource struct {
 	Ctncpu
 	Ctnmem
 	Ctnnet
+	Ctnblkio
 	CtnLabels
 }
 
 type ContaienrMetric struct {
 	Cpu    string
 	Memory string
+	Blkio  string
 	Net    string
 }
