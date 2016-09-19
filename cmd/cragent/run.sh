@@ -1,9 +1,8 @@
+# the script is used for local env testing
 #!/bin/bash
-
-
 export INTERVALTIME="3"
 export DOCKERENDPOINT="unix:///var/run/docker.sock"
-export INFLUXDBURL="http://127.0.0.1:8086"
+export INFLUXDBURL="http://114.115.208.145:8086"
 export INFLUXDBNAME_CONTAINER="monitorinfo"
 export INFLUXDBNAME_PACKET="packetinfo"
 

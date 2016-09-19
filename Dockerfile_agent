@@ -1,0 +1,24 @@
+FROM golang:1.6
+
+RUN apt-get update && apt-get install -y build-essential
+
+COPY . /go/src/github.com/crmonitor
+
+WORKDIR $GOPATH
+
+ENV GOPATH $GOPATH:$GOPATH/vendor
+
+RUN go install github.com/crmonitor/cmd/cragent
+
+ENV INTERVALTIME "3"
+ENV DOCKERENDPOINT "unix:///var/run/docker.sock"
+ENV INFLUXDBURL "http://114.115.208.145:8086"
+ENV INFLUXDBNAME_CONTAINER "monitorinfo"
+ENV INFLUXDBNAME_PACKET "packetinfo"
+
+# it's better to send the para from config or command line file when start
+ENV HOSTIP="114.115.208.145"
+
+EXPOSE 4000
+
+CMD ["agent"]
