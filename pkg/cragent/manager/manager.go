@@ -3,6 +3,7 @@ package manager
 import (
 	"errors"
 	"log"
+	"os"
 	"regexp"
 	"strconv"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/crmonitor/pkg/cragent/manager/cpu"
 	"github.com/crmonitor/pkg/cragent/manager/memory"
 	"github.com/crmonitor/pkg/cragent/manager/net"
+	"github.com/crmonitor/pkg/cragent/manager/packet"
 	"github.com/crmonitor/pkg/util/clienttool"
 	"github.com/crmonitor/pkg/util/events"
 	"github.com/docker/docker/api/types"
@@ -97,10 +99,11 @@ func init() {
 	//how to add lock for ContainerCurrnetDetail ???
 	ContainerCurrnetDetail = make(map[string]*ContainerResource)
 	ContainerMetricName = ContaienrMetric{
-		Cpu:    "cpu",
-		Memory: "memory",
-		Net:    "net",
-		Blkio:  "blkio",
+		Cpu:      "cpu",
+		Memory:   "memory",
+		Net:      "net",
+		Blkio:    "blkio",
+		MetaInfo: "metainfo",
 	}
 }
 
@@ -455,6 +458,19 @@ func (m *Manager) Start() error {
 		}
 	}()
 
+	//start to collect the packet info
+	log.Println("test packet collection")
+	//testInterface := "eth5"
+	InterfaceLocal := "lo"
+	InterfaceExtra := os.Getenv("INTERFACE")
+	if InterfaceExtra == "" {
+		log.Panic("env INTERFACE should be setted")
+	}
+
+	interval := 10 * time.Second
+	expiration := time.After(time.Second * 600)
+	go packet.StartCollect(InterfaceLocal, interval, expiration)
+	go packet.StartCollect(InterfaceExtra, interval, expiration)
 	//stat the ticker and get the container detail info
 	m.HousKeeping(m.Interval, ContainerCurrnetDetail)
 
@@ -518,10 +534,24 @@ func (m *Manager) TransferIntoInfluxData(containerID string, resource *Container
 			"rxbytesrate": value.RxBytesRate,
 			"txbytesrate": value.TxBytesRate,
 		}
-
+		//TODO put the net info into a separate database
 		influxData = &clienttool.InfluxData{Measurement: measurement, Fields: fields, Tags: tags}
 		influxList = append(influxList, influxData)
 	}
+
+	//metadata
+
+	measurement = ContainerMetricName.MetaInfo
+	fields = map[string]interface{}{
+		"containerid":    containerID,
+		"hostip":         conf.GlobalConfig.DefaultHostip,
+		"containerstate": resource.CtnBasic.Status,
+		// TODO adjust node state
+		"nodestate": "healthy",
+	}
+
+	influxData = &clienttool.InfluxData{Measurement: measurement, Fields: fields, Tags: tags}
+	influxList = append(influxList, influxData)
 
 	return influxList, nil
 

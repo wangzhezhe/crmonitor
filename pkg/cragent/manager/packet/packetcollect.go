@@ -132,7 +132,7 @@ func ifreverse(httpinstance *HttpTransaction, Srcaddr *Address, Destaddr *Addres
 }
 
 //if it is the input stream to local machine
-func inputStream(packet gopacket.Packet, Srcaddr *Address, Destaddr *Address) {
+func inputStream(measurement string, packet gopacket.Packet, Srcaddr *Address, Destaddr *Address) {
 	//get the instance from the list which has the reverse srcaddr and the destaddr
 	respdetail := string(packet.Data())
 
@@ -165,7 +165,7 @@ func inputStream(packet gopacket.Packet, Srcaddr *Address, Destaddr *Address) {
 			//}
 			log.Println("send the respondtime measurement")
 
-			influxData := getInfluxDataFromHttpInstance(httpinstance)
+			influxData := getInfluxDataFromHttpInstance(measurement, httpinstance)
 			err := globalInfluxClient.AddStats(influxData)
 			if err != nil {
 				log.Println("failed to upload data into influxdb: ", err)
@@ -178,8 +178,8 @@ func inputStream(packet gopacket.Packet, Srcaddr *Address, Destaddr *Address) {
 }
 
 //return measurement,fields,tags
-func getInfluxDataFromHttpInstance(httpinstance *HttpTransaction) []*clienttool.InfluxData {
-	measurement := "respondtime"
+func getInfluxDataFromHttpInstance(Measurement string, httpinstance *HttpTransaction) []*clienttool.InfluxData {
+	measurement := Measurement
 
 	fields := make(map[string]interface{})
 	fields["respondtime"] = httpinstance.Respondtime
@@ -209,7 +209,7 @@ func getInfluxDataFromHttpInstance(httpinstance *HttpTransaction) []*clienttool.
 }
 
 // get a new packet every time
-func processPacketInfo(packet gopacket.Packet, localip string) {
+func processPacketInfo(measurement string, packet gopacket.Packet, localip string) {
 	//get the specified layer
 	tcpLayer := packet.Layer(layers.LayerTypeTCP)
 	if tcpLayer != nil {
@@ -242,7 +242,7 @@ func processPacketInfo(packet gopacket.Packet, localip string) {
 		if destip.String() == localip {
 
 			mutex.Lock()
-			inputStream(packet, Srcaddr, Destaddr)
+			inputStream(measurement, packet, Srcaddr, Destaddr)
 			mutex.Unlock()
 		}
 
@@ -279,7 +279,8 @@ A:
 			Flagmutex.Unlock()
 			break A
 		default:
-			processPacketInfo(packet, localIP)
+			//the name of device is measurement
+			processPacketInfo(device, packet, localIP)
 		}
 
 	}

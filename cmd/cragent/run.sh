@@ -7,7 +7,7 @@ export INFLUXDBNAME_CONTAINER="monitorinfo"
 export INFLUXDBNAME_PACKET="packetinfo"
 
 export HOSTIP="10.211.55.5"
-
+export INTERFACE="eth5"
 
 ./cragent
 

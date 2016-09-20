@@ -64,8 +64,17 @@ type ContainerResource struct {
 }
 
 type ContaienrMetric struct {
-	Cpu    string
-	Memory string
-	Blkio  string
-	Net    string
+	Cpu      string
+	Memory   string
+	Blkio    string
+	Net      string
+	MetaInfo string
+}
+
+//TODO It's better to put the metainfo into the etcd
+type MetaInfo struct {
+	ContainerID    string
+	NodeName       string
+	ContainerState string
+	NodeState      string
 }
